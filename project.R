@@ -62,19 +62,19 @@ modFitGBM  <- train(classe ~ ., data=trainSet, method = "gbm",
                      trControl = trControlGBM, verbose = FALSE)
 modFitGBM$finalModel
 
-predictGBM <- predict(modFit_GBM, newdata=cvSet)
+predictGBM <- predict(modFitGBM, newdata=cvSet)
 confMatrixGBM <- confusionMatrix(predictGBM, cvSet$classe)
 confMatrixGBM
 
-plot(confMat_GBM$table, col = confMat_GBM$byClass, 
-     main = paste("GBM - Accuracy =", round(confMat_GBM$overall['Accuracy'], 4)))
+plot(confMatrixGBM$table, col = confMatrixGBM$byClass, 
+     main = paste("GBM - Accuracy =", round(confMatrixGBM$overall['Accuracy'], 4)))
 
 
 randomForest <- print(paste("Random Forest - Accuracy =",
                            round(confMatrixRF$overall['Accuracy'], 4)))
-decisionTree <- print(paste("Decision Tree - Accuracy =",
-                            round(confMatrixDT$overall['Accuracy'], 4)))
-GBM <- print(paste("GBM - Accuracy =", round(confMatrixGBM$overall['Accuracy'], 4)))
+#decisionTree <- print(paste("Decision Tree - Accuracy =",
+#                            round(confMatrixDT$overall['Accuracy'], 4)))
+#GBM <- print(paste("GBM - Accuracy =", round(confMatrixGBM$overall['Accuracy'], 4)))
 
 predictTEST <- predict(modFitRF, newdata=testData)
 predictTEST
@@ -85,6 +85,7 @@ predictTEST <- c(as.character(predictTEST))
 
 #Length of the predicted vector
 length(predictTEST)
+length(cvSet$classe)
 
 outOfSampleError.accuracy <- sum(predictTEST == cvSet$classe)/length(predictTEST)
 

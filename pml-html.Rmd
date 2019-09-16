@@ -1,0 +1,129 @@
+---
+title: "MLproject"
+author: "Alla Aleksandrova"
+date: '15 september 2019 г '
+output:
+  html_document: default
+  pdf_document: default
+editor_options:
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#Goal
+The goal is to predict the manner in which people did the exercise.
+
+#Summary
+
+*Data Preparation*  
+1. Download and load data sets,  
+2. Preprocess data set: create partition and filter out the training and test data set,  
+3. Find out the less useful predictors,  
+4. Look into correlations.  
+  
+*Model Building*  
+5. Fit model on three methods:  
+a) Random Forest,  
+b) Decision Tree,  
+c) Generalized Boosted Model;  
+6. Print accuracy of the built models.  
+  
+*Predict*  
+7. Predict the 20 quiz results,  
+8. Print out of sample error and percentage of out of sample error.  
+  
+  
+#Data preparation results
+```{r plot}
+library(caret); library(knitr);library(randomForest)
+library(rattle); library(rpart.plot);library(rpart)
+library(gbm); library(corrplot); library(ggplot2)
+library(colorspace); library(e1071)
+#load("pml-testing.csv")
+#load("pml-training.csv")
+#load data
+trainData <- read.csv("pml-training.csv"); dim(trainData)
+testData <- read.csv("pml-testing.csv"); dim(testData)
+set.seed(100)
+#create sets
+inTrain<-createDataPartition(y=trainData$classe, p=0.7, list=FALSE)
+trainSet<- trainData[inTrain, ]
+cvSet<- trainData[-inTrain, ]
+#find variables near zero
+NZV <- nearZeroVar(trainSet)
+trainSet <- trainSet[, -NZV]
+cvSet  <- cvSet[, -NZV]
+dim(trainSet)
+#remove variables that are mostly NA (mNA)
+mostlyNA <- sapply(trainSet, function(x) mean(is.na(x))) > 0.95
+trainSet <- trainSet[, mostlyNA==FALSE]
+cvSet <- cvSet[, mostlyNA==FALSE]
+#remove identification only variables (columns 1 to 5)
+trainSet <- trainSet[, -(1:5)]
+cvSet <- cvSet[, -(1:5)]
+
+corMatrix <- cor(trainSet[, -54])
+corrplot(corMatrix, order = "FPC", method = "color", type = "lower", 
+         tl.cex = 0.8, tl.col = rgb(0, 0, 0))
+
+```
+
+#Model building results
+Decision Tree Accuracy
+```{r plot Random Forest Accuracy}
+trControlRF <-trainControl(method = "cv", number = 3, verbose = FALSE)
+modFitRF <-train(classe ~ ., data = trainSet, method = "rf", trControl = trControlRF)
+modFitRF$finalModel
+
+predictRF <- predict(modFitRF, newdata = cvSet)
+confMatrixRF <- confusionMatrix(predictRF, cvSet$classe)
+
+plot(confMatrixRF$table, col = confMatrixRF$byClass, 
+     main = paste("Random Forest Accuracy =",
+                  round(confMatrixRF$overall['Accuracy'], 4)))
+```
+
+Decision Tree Accuracy
+```{r plot Decision Tree Accuracy}
+modFitDT <- rpart(classe ~ ., data=trainSet, method="class")
+fancyRpartPlot(modFitDT)
+
+predictDT <- predict(modFitDT, newdata=cvSet, type="class")
+confMatrixDT <- confusionMatrix(predictDT, cvSet$classe)
+plot(confMatrixDT$table, col = confMatrixDT$byClass, 
+     main = paste("Decision Tree Accuracy =",
+                  round(confMatrixDT$overall['Accuracy'], 4)))
+```
+Generalized Boosted Model Accuracy
+```{r plot Generalized Boosted Model Accuracy}
+trControlGBM <- trainControl(method = "repeatedcv", number = 5, repeats = 1)
+modFitGBM  <- train(classe ~ ., data=trainSet, method = "gbm",
+                    trControl = trControlGBM, verbose = FALSE)
+
+predictGBM <- predict(modFitGBM, newdata=cvSet)
+confMatrixGBM <- confusionMatrix(predictGBM, cvSet$classe)
+plot(confMatrixGBM$table, col = confMatrixGBM$byClass, 
+     main = paste("Generalized Boosted Model Accuracy =",
+                  round(confMatrixGBM$overall['Accuracy'], 4)))
+```
+
+
+After fitting our models the best accuracy is RandomForest Accuracy. The accuracy is 99.8%, thus my predicted accuracy for the out-of-sample error is 0.2%. I will use Random Forests to predict on the test set.
+
+```{r summary predict}
+#summary(predictTEST)
+modFitRF <-train(classe ~ ., data = trainSet, method = "rf", trControl = trControlRF)
+predictTEST <- predict(modFitRF, newdata=testData)
+predictTEST <- c(as.character(predictTEST))
+predictTEST
+```
+
+My out of sample error
+```{r out of sample error}
+outOfSampleError.accuracy <- sum(predictTEST == cvSet$classe)/length(predictTEST)
+outOfSampleError <- 1 - outOfSampleError.accuracy
+outOfSampleError
+```

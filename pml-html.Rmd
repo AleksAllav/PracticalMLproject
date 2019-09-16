@@ -1,5 +1,5 @@
 ---
-title: "MLproject"
+title: "practical machine learning project"
 author: "Alla Aleksandrova"
 date: '15 september 2019 г '
 output:
@@ -111,7 +111,22 @@ plot(confMatrixGBM$table, col = confMatrixGBM$byClass,
 ```
 
 
-After fitting our models the best accuracy is RandomForest Accuracy. The accuracy is 99.8%, thus my predicted accuracy for the out-of-sample error is 0.2%. I will use Random Forests to predict on the test set.
+After fitting our models the best accuracy is RandomForest Accuracy. The accuracy is 99.8%, thus my predicted accuracy for the out-of-sample error is 0.2%. 
+
+Then I tried to combine predictors to improve accuracy. 
+
+```{r combo model }
+combo<-data.frame(predictRF,predictGBM,predictDT, classe = cvSet$classe)
+
+modCombo<-train(classe ~ ., data = combo, method = "rf")
+prCombo<-predict(modCombo, cvSet)
+confMatrixCmb <- confusionMatrix(prCombo, cvSet$classe)
+plot(confMatrixCmb$table, col = confMatrixCmb$byClass, 
+     main = paste("Combo Model Accuracy =",
+                  round(confMatrixCmb$overall['Accuracy'], 4)))
+```
+
+This model's accuracy is smaller then random forest's model accuracy. I will use Random Forests to predict on the test set.
 
 ```{r summary predict}
 #summary(predictTEST)

@@ -69,12 +69,22 @@ confMatrixGBM
 plot(confMatrixGBM$table, col = confMatrixGBM$byClass, 
      main = paste("GBM - Accuracy =", round(confMatrixGBM$overall['Accuracy'], 4)))
 
+combo<-data.frame(predictRF,predictGBM,predictDT, classe = cvSet$classe)
+
+modCombo<-train(classe ~ ., data = combo, method = "rf")
+prCombo<-predict(modCombo, cvSet)
+confMatrixCmb <- confusionMatrix(prCombo, cvSet$classe)
+plot(confMatrixCmb$table, col = confMatrixCmb$byClass, 
+     main = paste("Generalized Boosted Model Accuracy =",
+                  round(confMatrixCmb$overall['Accuracy'], 4)))
 
 randomForest <- print(paste("Random Forest - Accuracy =",
                            round(confMatrixRF$overall['Accuracy'], 4)))
-#decisionTree <- print(paste("Decision Tree - Accuracy =",
-#                            round(confMatrixDT$overall['Accuracy'], 4)))
-#GBM <- print(paste("GBM - Accuracy =", round(confMatrixGBM$overall['Accuracy'], 4)))
+decisionTree <- print(paste("Decision Tree - Accuracy =",
+                            round(confMatrixDT$overall['Accuracy'], 4)))
+GBM <- print(paste("GBM - Accuracy =", round(confMatrixGBM$overall['Accuracy'], 4)))
+
+print(paste0("Combo accuracy = ", confusionMatrix(prCombo, cvSet$classe)$overall['Accuracy']))
 
 predictTEST <- predict(modFitRF, newdata=testData)
 predictTEST
